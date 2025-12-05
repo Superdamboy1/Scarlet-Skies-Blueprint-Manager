@@ -36,10 +36,10 @@ public class blueprintEditorScript : MonoBehaviour
         }
     }
 
-    public async void saveBlueprint()
+    public void saveBlueprint()
     {
-        targetBlueprintScript.saveBlueprint(fixName(blueprintName.text), blueprint, blueprintReader.getPartCount(blueprint), blueprintFolder + "\\" + fixName(blueprintName.text) + ".bpx", blueprintFolder + "\\" + fixName(blueprintName.text) + ".png");
-        await targetBlueprintScript.UpdateImage();
+        targetBlueprintScript.saveBlueprint(otherFix(blueprintName.text), otherFix(blueprint), blueprintReader.getPartCount(blueprint), blueprintFolder + "\\" + fixName(blueprintName.text) + ".bpx", blueprintFolder + "\\" + fixName(blueprintName.text) + ".png");
+        blueprintEditor.SetActive(false);
     }
 
     public string fixName(string name)
@@ -53,6 +53,13 @@ public class blueprintEditorScript : MonoBehaviour
         name = name.Replace("<", "");
         name = name.Replace(">", "");
         name = name.Replace("|", "");
+        name = name.Replace("\n", "");
+        name = name.Replace("\r", "");
+        return name;
+    }
+
+    public string otherFix(string name)
+    {
         name = name.Replace("\n", "");
         name = name.Replace("\r", "");
         return name;

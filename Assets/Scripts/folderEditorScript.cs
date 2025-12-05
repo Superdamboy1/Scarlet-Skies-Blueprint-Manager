@@ -21,7 +21,7 @@ public class folderEditorScript : MonoBehaviour
 
     public void saveFolder()
     {
-        targetFolderScript.saveFolder(folderPath + @"\" + fixName(folderName.text), isNewFolder);
+        targetFolderScript.saveFolder(folderPath + @"\" + fixName(folderName.text), isNewFolder, folderPath);
     }
 
     public string fixName(string name)

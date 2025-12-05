@@ -4,6 +4,7 @@ using System.IO;
 using System.Collections;
 using SFB;
 using System.IO.Compression;
+using System;
 
 public class folderScript : MonoBehaviour
 {
@@ -16,6 +17,7 @@ public class folderScript : MonoBehaviour
     public TMP_InputField folderNameInputText;
     public folderEditorScript folderEditorScript;
     public blueprintManagerScript blueprintManagerScript;
+    public Transform binTransform;
     [Header("Local References")]
     public GameObject bin;
     public GameObject questionMark;
@@ -52,6 +54,7 @@ public class folderScript : MonoBehaviour
             {
                 Directory.Delete(folderReference, true);
             }
+            transform.SetParent(binTransform);
             blueprintManagerScript.updateManifest(folderFolder);
             Destroy(gameObject);
         }
@@ -72,29 +75,47 @@ public class folderScript : MonoBehaviour
         canDeleteFolder = false;
     }
 
-    public void saveFolder(string folderToSave, bool isNewFolder)
+    public void saveFolder(string folderToSave, bool isNewFolder, string folderToSaveFolder)
     {
         if (isNewFolder)
         {
-            Directory.CreateDirectory(folderToSave);
+            if (Directory.Exists(folderToSave))
+            {
+                throw new Exception("Folder With Same Name Already Exists In Current Directory");
+            }
+            else
+            {
+                Directory.CreateDirectory(folderToSave);
+            }
         }
         else
         {
             if (Directory.Exists(folderReference))
             {
-                if (!Directory.Exists(folderToSave))
+                if (Directory.Exists(folderToSave))
+                {
+                    throw new Exception("Folder With Same Name Already Exists In Current Directory");
+                }
+                else
                 {
                     Directory.Move(folderReference, folderToSave);
                 }
             }
             else
             {
-                Directory.CreateDirectory(folderToSave);
-
+                if (Directory.Exists(folderToSave))
+                {
+                    throw new Exception("Folder With Same Name Already Exists In Current Directory");
+                }
+                else
+                {
+                    Directory.CreateDirectory(folderToSave);
+                }
             }
         }
         
         folderReference = folderToSave;
+        folderFolder = folderToSaveFolder;
         string[] path = folderToSave.Split('\\');
         folderName = path[path.Length - 1];
         folderNameText.text = folderName;
@@ -149,6 +170,25 @@ public class folderScript : MonoBehaviour
                     blueprintManagerScript.movePosition = transform.GetSiblingIndex() + 1;
                 }
             }
+        }
+    }
+
+    public void onPutInFolder()
+    {
+        blueprintManagerScript.isOverFolder = true;
+        blueprintManagerScript.folderPath = folderReference;
+        if (isMovingThisElement)
+        {
+            blueprintManagerScript.dontMove = true;
+        }
+    }
+
+    public void offPutInFolder()
+    {
+        blueprintManagerScript.isOverFolder = false;
+        if (isMovingThisElement)
+        {
+            blueprintManagerScript.dontMove = false;
         }
     }
 

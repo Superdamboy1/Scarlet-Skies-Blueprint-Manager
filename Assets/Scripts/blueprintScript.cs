@@ -4,10 +4,7 @@ using System.IO;
 using System.Collections;
 using System;
 using UnityEngine.UI;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using SFB;
-using System.IO.Compression;
-using System.ComponentModel.Design;
 
 public class blueprintScript : MonoBehaviour
 {
@@ -24,6 +21,7 @@ public class blueprintScript : MonoBehaviour
     public TMP_Text partCountText;
     public blueprintEditorScript blueprintEditorScript;
     public blueprintManagerScript blueprintManagerScript;
+    public Transform binTransform;
     [Header("Local References")]
     public GameObject bin;
     public GameObject questionMark;
@@ -38,6 +36,7 @@ public class blueprintScript : MonoBehaviour
     public RenderTexture renderTexture;
     public blueprintReader blueprintReader;
     public RawImage blueprintImage;
+    public blueprintPreviewer blueprintPreviewer;
 
     public void copyBlueprint()
     {
@@ -74,6 +73,11 @@ public class blueprintScript : MonoBehaviour
             {
                 File.Delete(blueprintFileReference);
             }
+            if (File.Exists(imagePath))
+            {
+                File.Delete(imagePath);
+            }
+            transform.SetParent(binTransform);
             blueprintManagerScript.updateManifest(blueprintFolder);
             Destroy(gameObject);
         }
@@ -96,6 +100,25 @@ public class blueprintScript : MonoBehaviour
 
     public void saveBlueprint(string blueprintToSaveName, string blueprintToSave, int blueprintToSavePartCount, string newReference, string newImageReference)
     {
+
+        if (!Directory.Exists(blueprintFolder))
+        {
+            Directory.CreateDirectory(blueprintFolder);
+        }
+
+        if (File.Exists(blueprintFileReference))
+        {
+            File.Delete(blueprintFileReference);
+        }
+
+        if (File.Exists(newReference))
+        {
+            throw new Exception("Blueprint With Same Name Already Exists In Current Directory");
+        }
+
+        blueprintFileReference = newReference;
+
+
         if (File.Exists(imagePath))
         {
             File.Delete(imagePath);
@@ -108,16 +131,6 @@ public class blueprintScript : MonoBehaviour
         imagePath = newImageReference;
         UpdateImage();
 
-        if (!Directory.Exists(blueprintFolder))
-        {
-            Directory.CreateDirectory(blueprintFolder);
-        }
-
-        if (File.Exists(blueprintFileReference))
-        {
-            File.Delete(blueprintFileReference);
-        }
-
         using (StreamWriter writer = new StreamWriter(newReference))
         {
             writer.WriteLine("1");
@@ -127,8 +140,6 @@ public class blueprintScript : MonoBehaviour
             writer.WriteLine(imagePath);
         }
         blueprintManagerScript.updateManifest(blueprintFolder);
-
-        blueprintEditor.SetActive(false);
     }
 
     public void preMove()
@@ -183,8 +194,8 @@ public class blueprintScript : MonoBehaviour
         {
             DestroyImmediate(blueprintManagerScript.transform.GetChild(0).gameObject);
         }
-        blueprintReader.buildBlueprint(blueprint, blueprintManagerScript.transform);
         Transform cameraTransform = blueprintReader.buildAndGetCamera(blueprint, blueprintManagerScript.transform);
+        blueprintReader.buildOutlineImage(blueprint, blueprintManagerScript.transform, Vector3.one);
         Camera.transform.position = cameraTransform.position;
         Camera.transform.rotation = cameraTransform.rotation;
         Camera.GetComponent<Camera>().Render();
@@ -196,6 +207,11 @@ public class blueprintScript : MonoBehaviour
         byte[] imageBytes = image.EncodeToPNG();
         File.WriteAllBytes(imagePath, imageBytes);
         loadImage();
+        count = blueprintManagerScript.transform.childCount;
+        for (int i = 0; i < count; i++)
+        {
+            DestroyImmediate(blueprintManagerScript.transform.GetChild(0).gameObject);
+        }
     }
 
     public void loadImage()
@@ -208,7 +224,27 @@ public class blueprintScript : MonoBehaviour
 
     public void exportBlueprint()
     {
-        string savePath = StandaloneFileBrowser.SaveFilePanel("Export Folder", "", blueprintName, "bpx");
+        string savePath = StandaloneFileBrowser.SaveFilePanel("Export Folder", "", fixName(blueprintName), "bpx");
         File.Copy(blueprintFileReference, savePath);
+    }
+
+    public void onPreview()
+    {
+        blueprintPreviewer.runtimePreviewBlueprint(blueprintName, blueprint, blueprintPreviewer.transform.GetChild(0));
+    }
+    public string fixName(string name)
+    {
+        name = name.Replace("\\", "");
+        name = name.Replace("/", "");
+        name = name.Replace(":", "");
+        name = name.Replace("*", "");
+        name = name.Replace("?", "");
+        name = name.Replace("\"", "");
+        name = name.Replace("<", "");
+        name = name.Replace(">", "");
+        name = name.Replace("|", "");
+        name = name.Replace("\n", "");
+        name = name.Replace("\r", "");
+        return name;
     }
 }
