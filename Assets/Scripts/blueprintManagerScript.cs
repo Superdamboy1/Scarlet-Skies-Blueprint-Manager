@@ -210,6 +210,7 @@ public class blueprintManagerScript : MonoBehaviour
                             z++;
                         }
                         blueprintScript.blueprintName = blueprintScript.blueprintName + z;
+                        blueprintScript.saveBlueprint(blueprintScript.blueprintName, blueprintScript.blueprint, blueprintScript.partCount, blueprintScript.blueprintFileReference, blueprintScript.imagePath);
                     }
                     blueprintScript.blueprintNameText.text = blueprintScript.blueprintName;
                     blueprintDictionary.Add(blueprintScript.blueprintName, duplicatedBlueprint);
@@ -313,7 +314,14 @@ public class blueprintManagerScript : MonoBehaviour
 
         if (fileExtension == "bpx")
         {
-            string name = Path.GetFileNameWithoutExtension(importPath);
+            string name = "";
+            using (StreamReader sr = new StreamReader(importPath))
+            {
+                if(sr.ReadLine() == "1")
+                {
+                    name = sr.ReadLine();
+                }
+            }
             string blueprintPath = activeFolder + "\\" + fixName(name);
             if (File.Exists(blueprintPath + ".bpx") || manifest.Contains("0" + name))
             {
@@ -325,6 +333,7 @@ public class blueprintManagerScript : MonoBehaviour
                 blueprintPath = blueprintPath + z;
                 name = name + z;
             }
+            manifest.Add("0" + name);
             blueprintPath = blueprintPath + ".bpx";
 
             File.Copy(importPath, blueprintPath, true);
@@ -412,16 +421,30 @@ public class blueprintManagerScript : MonoBehaviour
         string fileExtension = fileDescription[fileDescription.Length - 1];
         string[] filePath = importPath.Split('\\');
 
+        List<string> manifest = getManifest(activeFolder);
+
         if (fileExtension == "bpx")
         {
-            string name = Path.GetFileNameWithoutExtension(importPath);
+            string name = "";
+            using (StreamReader sr = new StreamReader(importPath))
+            {
+                if (sr.ReadLine() == "1")
+                {
+                    name = sr.ReadLine();
+                }
+            }
             string blueprintPath = activeFolder + "\\" + fixName(name);
-
+            if (!manifest.Contains("0" + name))
+            {
+                manifest.Add("0" + name);
+            }
             File.Copy(importPath, blueprintPath, true);
         }
         if (fileExtension == "zip")
         {
             ZipFile.ExtractToDirectory(importPath, activeFolder, true);
+            List<string> newManifest = getManifest(activeFolder);
+            manifest.AddRange(newManifest);
         }
         if (fileExtension == "ssbp")
         {
@@ -445,6 +468,10 @@ public class blueprintManagerScript : MonoBehaviour
                             {
                                 File.Delete(blueprintPath);
                             }
+                            if (!manifest.Contains("0" + name))
+                            {
+                                manifest.Add("0" + name);
+                            }
 
                             using (StreamWriter writer = new StreamWriter(blueprintPath))
                             {
@@ -457,6 +484,20 @@ public class blueprintManagerScript : MonoBehaviour
                         x++;
                     }
                 }
+            }
+        }
+
+        string manifestPath = activeFolder + "\\manifest.man";
+        if (File.Exists(manifestPath))
+        {
+            File.Delete(manifestPath);
+        }
+
+        using (StreamWriter writer = new StreamWriter(manifestPath))
+        {
+            for (int i = 0; i < manifest.Count; i++)
+            {
+                writer.WriteLine(manifest[i]);
             }
         }
 

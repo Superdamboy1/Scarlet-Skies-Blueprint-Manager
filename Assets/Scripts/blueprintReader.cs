@@ -10,6 +10,14 @@ public class blueprintReader : MonoBehaviour
     //https://create.roblox.com/docs/reference/engine/datatypes/BrickColor
     //Workshop Link:
     //https://www.roblox.com/games/4694452046/Workshop
+    
+    //Cube
+    //Wedge
+    //Cone
+    //Vertical Cylinder
+    //Horizontal Cylinder
+    //Sphere
+    //Cone
 
     public List<blueprintPart> blueprintList = new List<blueprintPart>();
     Dictionary<string, string> names = new Dictionary<string, string>()

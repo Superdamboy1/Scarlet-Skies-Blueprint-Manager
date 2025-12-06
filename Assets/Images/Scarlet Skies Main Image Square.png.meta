@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 6f5ed808f8d29984691109c3e7d58373
+guid: aad40a5f78c371245a261e9f06835e4b
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -112,8 +112,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7404aefc54336114187b20c7a677b266
-      internalID: 1494347889
+      spriteID: 1833d29e962fb7148a6ee55ffa7b5fd9
+      internalID: 926157347
       vertices: []
       indices: 
       edges: []
@@ -122,7 +122,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: f65107e789e6c6c4caa97ea39ce6873d
+    spriteID: 9ab78a6a4b7688549a8b46ffe3f885d1
     internalID: 0
     vertices: []
     indices: 
@@ -132,7 +132,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Scarlet Skies Main Image Square_0: 1494347889
+      Scarlet Skies Main Image Square_0: 926157347
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

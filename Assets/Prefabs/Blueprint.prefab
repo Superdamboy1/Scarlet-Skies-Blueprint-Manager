@@ -977,7 +977,7 @@ GameObject:
   - component: {fileID: 8197449445483191744}
   - component: {fileID: 572798734771170864}
   - component: {fileID: 8212850878317767230}
-  - component: {fileID: 5253696860132734360}
+  - component: {fileID: 2078825203645754442}
   m_Layer: 5
   m_Name: Preview Blueprint
   m_TagString: Untagged
@@ -1101,7 +1101,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &5253696860132734360
+--- !u!114 &2078825203645754442
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1110,7 +1110,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 3718021062982510774}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 52cdfad5761d88847ae7b2552b0705f6, type: 3}
+  m_Script: {fileID: 11500000, guid: dc0e3292abd65bf46a6f302aac0a3bec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   hoverShow: {fileID: 2782966612314504793}
@@ -1876,6 +1876,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
