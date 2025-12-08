@@ -444,7 +444,13 @@ public class blueprintManagerScript : MonoBehaviour
         {
             ZipFile.ExtractToDirectory(importPath, activeFolder, true);
             List<string> newManifest = getManifest(activeFolder);
-            manifest.AddRange(newManifest);
+            for(int i = 0; i < newManifest.Count; i++)
+            {
+                if (!manifest.Contains("0" + name))
+                {
+                    manifest.Add("0" + name);
+                }
+            }
         }
         if (fileExtension == "ssbp")
         {
