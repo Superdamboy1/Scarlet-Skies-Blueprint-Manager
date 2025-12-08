@@ -446,9 +446,9 @@ public class blueprintManagerScript : MonoBehaviour
             List<string> newManifest = getManifest(activeFolder);
             for(int i = 0; i < newManifest.Count; i++)
             {
-                if (!manifest.Contains("0" + name))
+                if (!manifest.Contains(newManifest[i]))
                 {
-                    manifest.Add("0" + name);
+                    manifest.Add(newManifest[i]);
                 }
             }
         }
