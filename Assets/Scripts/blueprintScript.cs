@@ -28,9 +28,13 @@ public class blueprintScript : MonoBehaviour
     public TMP_Text blueprintNameText;
     public hoverScript upperHover;
     public hoverScript lowerHover;
+    public GameObject copy;
+    public GameObject copied;
     [Header("Other Variables")]
     public bool canDeleteBlueprint;
     public bool isMovingThisElement;
+    public bool alreadyCopied;
+    public float cooldown;
     [Header("Image Stuff")]
     public GameObject Camera;
     public RenderTexture renderTexture;
@@ -41,6 +45,27 @@ public class blueprintScript : MonoBehaviour
     public void copyBlueprint()
     {
         GUIUtility.systemCopyBuffer = blueprint;
+        cooldown = 5f;
+
+        if (!alreadyCopied)
+        {
+            StartCoroutine(BlueprintCopied());
+        }
+    }
+
+    IEnumerator BlueprintCopied()
+    {
+        alreadyCopied = true;
+        copy.SetActive(false);
+        copied.SetActive(true);
+        while (cooldown > 0)
+        {
+            cooldown -= Time.deltaTime;
+            yield return null;
+        }
+        alreadyCopied = false;
+        copy.SetActive(true);
+        copied.SetActive(false);
     }
 
     public void editBlueprint()

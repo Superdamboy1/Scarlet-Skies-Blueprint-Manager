@@ -752,25 +752,24 @@ public class blueprintManagerScript : MonoBehaviour
                 if (Keyboard.current.equalsKey.wasPressedThisFrame)
                 {
                     zoom *= 1.1f;
-                    canvasScaler.scaleFactor = zoom;
                     PlayerPrefs.SetFloat("zoom", zoom);
                 }
 
                 if (Keyboard.current.minusKey.wasPressedThisFrame)
                 {
                     zoom /= 1.1f;
-                    canvasScaler.scaleFactor = zoom;
                     PlayerPrefs.SetFloat("zoom", zoom);
                 }
 
                 if (Keyboard.current.digit0Key.wasPressedThisFrame)
                 {
                     zoom = 1f;
-                    canvasScaler.scaleFactor = zoom;
                     PlayerPrefs.SetFloat("zoom", zoom);
                 }
             }
         }
+
+        canvasScaler.scaleFactor = zoom * (Screen.width / 1920f);
     }
 
     public void search()
