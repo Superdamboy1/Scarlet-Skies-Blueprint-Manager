@@ -550,10 +550,10 @@ public class blueprintManagerScript : MonoBehaviour
                 writer.WriteLine(rootFolder + "\\" + fixName(blueprintName) + ".png");
             }
             manifest.Add("0" + blueprintName);
+            PlayerPrefs.DeleteKey("blueprintName" + y);
+            PlayerPrefs.DeleteKey("blueprint" + y);
             y++;
         }
-
-        PlayerPrefs.DeleteAll();
 
 
         int x = 0;
