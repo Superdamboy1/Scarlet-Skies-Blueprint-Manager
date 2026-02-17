@@ -34,6 +34,8 @@ public class blueprintManagerScript : MonoBehaviour
     public GameObject overWritePopup;
     public bool loadingSomething;
 
+    public TMP_Text FPSText;
+
     [Header("Image Stuff")]
     public GameObject imageTaker;
     public blueprintPreviewer blueprintPreviewer;
@@ -770,6 +772,22 @@ public class blueprintManagerScript : MonoBehaviour
         }
 
         canvasScaler.scaleFactor = zoom * (Screen.width / 1920f);
+
+        FPSText.text = (1f / Time.deltaTime).ToString();
+    }
+
+    private void OnApplicationFocus(bool focus)
+    {
+        if (focus)
+        {
+            Application.targetFrameRate = -1;
+            QualitySettings.vSyncCount = 1;
+        }
+        else
+        {
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = 10;
+        }
     }
 
     public void search()
