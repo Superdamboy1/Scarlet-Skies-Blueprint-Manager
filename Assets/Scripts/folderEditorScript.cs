@@ -39,4 +39,14 @@ public class folderEditorScript : MonoBehaviour
         name = name.Replace("\r", "");
         return name;
     }
+
+    public void setThumbnail()
+    {
+        targetFolderScript.setThumbnail();
+    }
+
+    public void resetThumbnail()
+    {
+        targetFolderScript.resetThumbnail();
+    }
 }

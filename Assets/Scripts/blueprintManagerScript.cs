@@ -156,6 +156,7 @@ public class blueprintManagerScript : MonoBehaviour
                     {
                         topFolder.transform.SetAsFirstSibling();
                     }
+                    folderScript.loadImage();
                     await Awaitable.BackgroundThreadAsync();
                 }
 
@@ -821,7 +822,10 @@ public class blueprintManagerScript : MonoBehaviour
         images.AddRange(Directory.GetFiles(rootFolder, "*.png", SearchOption.AllDirectories));
         for (int i = 0; i < images.Count; i++)
         {
-            File.Delete(images[i]);
+            if (!images[i].EndsWith("Thumbnail.png"))
+            {
+                File.Delete(images[i]);
+            }
         }
         LoadFolder(activeFolder);
 

@@ -5,6 +5,7 @@ using System.Collections;
 using SFB;
 using System.IO.Compression;
 using System;
+using UnityEngine.UI;
 
 public class folderScript : MonoBehaviour
 {
@@ -24,6 +25,8 @@ public class folderScript : MonoBehaviour
     public TMP_Text folderNameText;
     public hoverScript upperHover;
     public hoverScript lowerHover;
+    public RawImage folderImage;
+    public Texture defaultThumbnail;
     [Header("Other Variables")]
     public bool canDeleteFolder;
     public bool isMovingThisElement;
@@ -90,26 +93,29 @@ public class folderScript : MonoBehaviour
         }
         else
         {
-            if (Directory.Exists(folderReference))
+            if (folderToSave != folderReference)
             {
-                if (Directory.Exists(folderToSave))
+                if (Directory.Exists(folderReference))
                 {
-                    throw new Exception("Folder With Same Name Already Exists In Current Directory");
+                    if (Directory.Exists(folderToSave))
+                    {
+                        throw new Exception("Folder With Same Name Already Exists In Current Directory");
+                    }
+                    else
+                    {
+                        Directory.Move(folderReference, folderToSave);
+                    }
                 }
                 else
                 {
-                    Directory.Move(folderReference, folderToSave);
-                }
-            }
-            else
-            {
-                if (Directory.Exists(folderToSave))
-                {
-                    throw new Exception("Folder With Same Name Already Exists In Current Directory");
-                }
-                else
-                {
-                    Directory.CreateDirectory(folderToSave);
+                    if (Directory.Exists(folderToSave))
+                    {
+                        throw new Exception("Folder With Same Name Already Exists In Current Directory");
+                    }
+                    else
+                    {
+                        Directory.CreateDirectory(folderToSave);
+                    }
                 }
             }
         }
@@ -196,5 +202,40 @@ public class folderScript : MonoBehaviour
     {
         string savePath = StandaloneFileBrowser.SaveFilePanel("Export Folder", "", folderName, "zip");
         ZipFile.CreateFromDirectory(folderReference, savePath);
+    }
+
+    public void loadImage()
+    {
+        if (File.Exists(folderReference + "\\Thumbnail.png"))
+        {
+            byte[] bytes = File.ReadAllBytes(folderReference + "\\Thumbnail.png");
+            Texture2D image = new(1024, 1024, TextureFormat.RGBA32, 1, false);
+            image.LoadImage(bytes);
+            folderImage.texture = image;
+        }
+        else
+        {
+            folderImage.texture = defaultThumbnail;
+        }
+    }
+
+    public void setThumbnail()
+    {
+        ExtensionFilter[] extensions = new[]
+        {
+            new ExtensionFilter("Image Files", "png", "jpg", "jpeg", "exr")
+        };
+        string path = StandaloneFileBrowser.OpenFilePanel("Select Thumbnail", folderReference, extensions, false)[0];
+        File.Copy(path, folderReference + "\\Thumbnail.png", true);
+        loadImage();
+    }
+
+    public void resetThumbnail()
+    {
+        if (File.Exists(folderReference + "\\Thumbnail.png"))
+        {
+            File.Delete(folderReference + "\\Thumbnail.png");
+            loadImage();
+        }
     }
 }
