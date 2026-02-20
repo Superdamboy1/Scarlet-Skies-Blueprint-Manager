@@ -58,7 +58,7 @@ public class folderScript : MonoBehaviour
                 Directory.Delete(folderReference, true);
             }
             transform.SetParent(binTransform);
-            blueprintManagerScript.updateManifest(folderFolder);
+            blueprintManagerScript.updateManifast(folderFolder);
             Destroy(gameObject);
         }
         else
@@ -125,7 +125,7 @@ public class folderScript : MonoBehaviour
         string[] path = folderToSave.Split('\\');
         folderName = path[path.Length - 1];
         folderNameText.text = folderName;
-        blueprintManagerScript.updateManifest(folderFolder);
+        blueprintManagerScript.updateManifast(folderFolder);
 
         folderEditor.SetActive(false);
     }

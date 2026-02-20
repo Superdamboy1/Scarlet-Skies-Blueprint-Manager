@@ -5,6 +5,7 @@ using System.Collections;
 using System;
 using UnityEngine.UI;
 using SFB;
+using System.Collections.Generic;
 
 public class blueprintScript : MonoBehaviour
 {
@@ -15,6 +16,7 @@ public class blueprintScript : MonoBehaviour
     public string blueprintFolder;
     public int partCount;
     public string imagePath;
+    public List<previousBlueprint> previousBlueprints;
     [Header("Global References")]
     public GameObject blueprintEditor;
     public TMP_InputField blueprintNameInputText;
@@ -103,7 +105,7 @@ public class blueprintScript : MonoBehaviour
                 File.Delete(imagePath);
             }
             transform.SetParent(binTransform);
-            blueprintManagerScript.updateManifest(blueprintFolder);
+            blueprintManagerScript.updateManifast(blueprintFolder);
             Destroy(gameObject);
         }
         else
@@ -164,7 +166,7 @@ public class blueprintScript : MonoBehaviour
             writer.WriteLine(partCount);
             writer.WriteLine(imagePath);
         }
-        blueprintManagerScript.updateManifest(blueprintFolder);
+        blueprintManagerScript.updateManifast(blueprintFolder);
     }
 
     public void preMove()

@@ -71,7 +71,8 @@ public class blueprintManagerScript : MonoBehaviour
         }
         canvasScaler.scaleFactor = zoom;
 
-        loadOldVersions();
+
+        //loadOldVersions();
         await LoadFolder(rootFolder);
     }
 
@@ -84,29 +85,12 @@ public class blueprintManagerScript : MonoBehaviour
             loadingSomething = true;
             if (Directory.Exists(path))
             {
-
                 //clear current view
                 for (int i = 0; i < content.transform.childCount; i++)
                 {
                     Destroy(content.transform.GetChild(i).gameObject);
                 }
                 activeFolder = path;
-                Dictionary<string, GameObject> blueprintDictionary = new Dictionary<string, GameObject>();
-                Dictionary<string, GameObject> folderDictionary = new Dictionary<string, GameObject>();
-                Dictionary<string, int> manifestDictionary = new Dictionary<string, int>();
-                List<string> manifest = new List<string>();
-
-                if (getManifest(path) != null)
-                {
-                    manifest = getManifest(path);
-                    for (int i = 0; i < manifest.Count; i++)
-                    {
-                        if (manifest[i] != "" && manifest[i] != null)
-                        {
-                            manifestDictionary.Add(manifest[i], i);
-                        }
-                    }
-                }
 
 
                 //add return if needed
@@ -129,126 +113,112 @@ public class blueprintManagerScript : MonoBehaviour
                     topFolder.transform.SetAsFirstSibling();
                 }
 
-                //get folders in directory
-                string[] directories = Directory.GetDirectories(path);
-                foreach (string dir in directories)
-                {
-                    await Awaitable.MainThreadAsync();
-                    GameObject duplicatedFolder = Instantiate(folderPrefab, content);
-                    folderScript folderScript = duplicatedFolder.GetComponent<folderScript>();
-                    string[] pathArray = dir.Split('\\');
-                    folderScript.folderName = pathArray[pathArray.Length - 1];
-                    folderScript.folderNameText.text = folderScript.folderName;
-                    folderScript.folderReference = dir;
-                    folderScript.folderFolder = path;
-                    folderScript.binTransform = binTransform;
+                //get manifest
+                List<manifestItem> manifest = getManifest(rootFolder);
 
-                    folderScript.folderEditor = folderEditor;
-                    folderScript.folderNameInputText = folderNameInputText;
-                    folderScript.folderEditorScript = folderEditorScript;
-                    folderScript.blueprintManagerScript = manager;
-                    folderDictionary.Add(folderScript.folderName, duplicatedFolder);
-                    if (manifestDictionary.ContainsKey("1" + folderScript.folderName))
-                    {
-                        duplicatedFolder.transform.SetSiblingIndex(manifestDictionary["1" + folderScript.folderName] + Convert.ToInt32(path != rootFolder));
-                    }
-                    if (topFolder != null)
-                    {
-                        topFolder.transform.SetAsFirstSibling();
-                    }
-                    folderScript.loadImage();
-                    await Awaitable.BackgroundThreadAsync();
-                }
-
-                //get blueprints in directory
-                string[] blueprints = Directory.GetFiles(path, "*.bpx");
-                foreach (string blueprint in blueprints)
+                if (manifest != null)
                 {
-                    await Awaitable.MainThreadAsync();
-                    GameObject duplicatedBlueprint = Instantiate(blueprintPrefab, content);
-                    blueprintScript blueprintScript = duplicatedBlueprint.GetComponent<blueprintScript>();
-                    using (StreamReader reader = new StreamReader(blueprint))
+                    foreach (manifestItem item in manifest)
                     {
-                        string type = reader.ReadLine();
-                        if (type == "1")
+                        await Awaitable.MainThreadAsync();
+
+                        //load blueprint
+                        if (item.type == 0)
                         {
-                            blueprintScript.blueprintFileReference = blueprint;
+                            GameObject duplicatedBlueprint = Instantiate(blueprintPrefab, content);
+                            blueprintScript blueprintScript = duplicatedBlueprint.GetComponent<blueprintScript>();
+                            using (StreamReader reader = new StreamReader(item.reference))
+                            {
+                                string type = reader.ReadLine();
+                                if (type == "2")
+                                {
+                                    blueprintScript.blueprintName = reader.ReadLine();
+                                    blueprintScript.blueprint = reader.ReadLine();
+                                    int partCount = 0;
+                                    int.TryParse(reader.ReadLine(), out partCount);
+                                    blueprintScript.partCount = partCount;
+                                    blueprintScript.imagePath = reader.ReadLine();
+                                }
+
+                                int i = 0;
+                                string line;
+                                previousBlueprint tempBlueprint = new();
+                                while ((line = reader.ReadLine()) != null)
+                                {
+                                    if (i % 2 == 0)
+                                    {
+                                        tempBlueprint.saveDate = line;
+                                    }
+                                    if (i % 2 == 1)
+                                    {
+                                        tempBlueprint.blueprint = line;
+                                        blueprintScript.previousBlueprints.Add(tempBlueprint);
+                                    }
+                                    i++;
+                                }
+                            }
+
+                            //set static and external variables
+                            blueprintScript.blueprintFileReference = item.reference;
                             blueprintScript.blueprintFolder = path;
-                            blueprintScript.blueprintName = reader.ReadLine();
-                            blueprintScript.blueprint = reader.ReadLine();
-                            int partCount;
-                            int.TryParse(reader.ReadLine(), out partCount);
-                            blueprintScript.partCount = partCount;
-                            blueprintScript.imagePath = reader.ReadLine();
-                        }
-                    }
+                            blueprintScript.blueprintEditor = blueprintEditor;
+                            blueprintScript.blueprintNameInputText = blueprintNameInputText;
+                            blueprintScript.partCountText = partCountText;
+                            blueprintScript.blueprintEditorScript = blueprintEditorScript;
+                            blueprintScript.blueprintManagerScript = manager;
+                            blueprintScript.blueprintReader = blueprintReader;
+                            blueprintScript.binTransform = binTransform;
+                            blueprintScript.Camera = imageTaker;
+                            blueprintScript.blueprintPreviewer = blueprintPreviewer;
+                            blueprintScript.blueprintNameText.text = blueprintScript.blueprintName;
 
-                    blueprintScript.blueprintEditor = blueprintEditor;
-                    blueprintScript.blueprintNameInputText = blueprintNameInputText;
-                    blueprintScript.partCountText = partCountText;
-                    blueprintScript.blueprintEditorScript = blueprintEditorScript;
-                    blueprintScript.blueprintManagerScript = manager;
-                    blueprintScript.blueprintReader = blueprintReader;
-                    blueprintScript.binTransform = binTransform;
-                    blueprintScript.Camera = imageTaker;
-                    blueprintScript.blueprintPreviewer = blueprintPreviewer;
-                    if (blueprintScript.imagePath == "" || blueprintScript.imagePath == null || !File.Exists(blueprintScript.imagePath) || blueprintScript.imagePath != path + "\\" + fixName(blueprintScript.blueprintName) + ".png")
-                    {
-                        if (File.Exists(blueprintScript.imagePath))
-                        {
-                            File.Delete(blueprintScript.imagePath);
-                        }
-                        blueprintScript.imagePath = path + "\\" + fixName(blueprintScript.blueprintName) + ".png";
-                        blueprintScript.saveBlueprint(blueprintScript.blueprintName, blueprintScript.blueprint, blueprintScript.partCount, blueprintScript.blueprintFileReference, blueprintScript.imagePath);
-                    }
-                    else
-                    {
-                        blueprintScript.loadImage();
-                    }
-                    if (blueprintDictionary.ContainsKey(blueprintScript.blueprintName))
-                    {
-                        int z = 2;
-                        while (blueprintDictionary.ContainsKey(blueprintScript.blueprintName + z))
-                        {
-                            z++;
-                        }
-                        blueprintScript.blueprintName = blueprintScript.blueprintName + z;
-                        blueprintScript.saveBlueprint(blueprintScript.blueprintName, blueprintScript.blueprint, blueprintScript.partCount, blueprintScript.blueprintFileReference, blueprintScript.imagePath);
-                    }
-                    blueprintScript.blueprintNameText.text = blueprintScript.blueprintName;
-                    blueprintDictionary.Add(blueprintScript.blueprintName, duplicatedBlueprint);
-
-                    if (manifestDictionary.ContainsKey("0" + blueprintScript.blueprintName))
-                    {
-                        duplicatedBlueprint.transform.SetSiblingIndex(manifestDictionary["0" + blueprintScript.blueprintName] + Convert.ToInt32(path != rootFolder));
-                    }
-                    if (topFolder != null)
-                    {
-                        topFolder.transform.SetAsFirstSibling();
-                    }
-                    await Awaitable.BackgroundThreadAsync();
-                }
-                await Awaitable.MainThreadAsync();
-
-                for (int i = 0; i < manifest.Count; i++)
-                {
-                    if (manifest[i] != null)
-                    {
-                        if (manifest[i].Length >= 2)
-                        {
-                            if (manifest[i].Substring(0, 1) == "0")
+                            //create or update image
+                            if (blueprintScript.imagePath == "" || blueprintScript.imagePath == null || !File.Exists(blueprintScript.imagePath) || blueprintScript.imagePath != path + "\\" + fixName(blueprintScript.blueprintName) + ".png")
                             {
-                                blueprintDictionary[manifest[i].Substring(1)].transform.SetSiblingIndex(i + Convert.ToInt32(path != rootFolder));
+                                if (File.Exists(blueprintScript.imagePath))
+                                {
+                                    File.Delete(blueprintScript.imagePath);
+                                }
+                                blueprintScript.imagePath = path + "\\" + fixName(blueprintScript.blueprintName) + ".png";
+                                blueprintScript.saveBlueprint(blueprintScript.blueprintName, blueprintScript.blueprint, blueprintScript.partCount, blueprintScript.blueprintFileReference, blueprintScript.imagePath);
                             }
-                            if (manifest[i].Substring(0, 1) == "1")
+                            else
                             {
-                                folderDictionary[manifest[i].Substring(1)].transform.SetSiblingIndex(i + Convert.ToInt32(path != rootFolder));
+                                blueprintScript.loadImage();
                             }
                         }
+
+
+                        //load Folder
+                        if(item.type == 1)
+                        {
+                            GameObject duplicatedFolder = Instantiate(folderPrefab, content);
+                            folderScript folderScript = duplicatedFolder.GetComponent<folderScript>();
+
+                            //set static and external variables
+                            folderScript.folderName = Path.GetDirectoryName(item.reference);
+                            folderScript.folderNameText.text = folderScript.folderName;
+                            folderScript.folderReference = item.reference;
+                            folderScript.folderFolder = path;
+                            folderScript.binTransform = binTransform;
+                            folderScript.folderEditor = folderEditor;
+                            folderScript.folderNameInputText = folderNameInputText;
+                            folderScript.folderEditorScript = folderEditorScript;
+                            folderScript.blueprintManagerScript = manager;
+
+                            //load image
+                            folderScript.loadImage();
+                        }
+
+                        //set the return as the top most item
+                        if (topFolder != null)
+                        {
+                            topFolder.transform.SetAsFirstSibling();
+                        }
+
+                        await Awaitable.BackgroundThreadAsync();
                     }
                 }
-
-                updateManifest(path);
             }
             loadingSomething = false;
         }
@@ -309,110 +279,7 @@ public class blueprintManagerScript : MonoBehaviour
     }
     public async void importCreateNew()
     {
-        string[] fileDescription = importPath.Split('.');
-        string fileExtension = fileDescription[fileDescription.Length - 1];
-        string[] filePath = importPath.Split('\\');
 
-        List<string> manifest = getManifest(activeFolder);
-
-        if (fileExtension == "bpx")
-        {
-            string name = "";
-            using (StreamReader sr = new StreamReader(importPath))
-            {
-                if(sr.ReadLine() == "1")
-                {
-                    name = sr.ReadLine();
-                }
-            }
-            string blueprintPath = activeFolder + "\\" + fixName(name);
-            if (File.Exists(blueprintPath + ".bpx") || manifest.Contains("0" + name))
-            {
-                int z = 2;
-                while (File.Exists(blueprintPath + z + ".bpx") || manifest.Contains("0" + name + z))
-                {
-                    z++;
-                }
-                blueprintPath = blueprintPath + z;
-                name = name + z;
-            }
-            manifest.Add("0" + name);
-            blueprintPath = blueprintPath + ".bpx";
-
-            File.Copy(importPath, blueprintPath, true);
-        }
-        if (fileExtension == "zip")
-        {
-            string newPath = activeFolder + "\\" + Path.GetFileNameWithoutExtension(importPath);
-            if (Directory.Exists(newPath))
-            {
-                int z = 2;
-                while (Directory.Exists(newPath + z))
-                {
-                    z++;
-                }
-                newPath = newPath + z;
-            }
-            ZipFile.ExtractToDirectory(importPath, newPath, true);
-        }
-        if (fileExtension == "ssbp")
-        {
-            int x = 0;
-            if (File.Exists(importPath))
-            {
-                using (StreamReader sr = new StreamReader(importPath))
-                {
-                    string line;
-                    string name = "";
-                    while ((line = sr.ReadLine()) != null)
-                    {
-                        if (x % 3 == 0)
-                        {
-                            name = line;
-                        }
-                        if (x % 3 == 1)
-                        {
-                            string blueprintPath = activeFolder + "\\" + fixName(name);
-                            if (File.Exists(blueprintPath + ".bpx") || manifest.Contains("0" + name))
-                            {
-                                int z = 2;
-                                while (File.Exists(blueprintPath + z + ".bpx") || manifest.Contains("0" + name + z))
-                                {
-                                    z++;
-                                }
-                                blueprintPath = blueprintPath + z;
-                                name = name + z;
-                            }
-                            manifest.Add("0" + name);
-                            blueprintPath = blueprintPath + ".bpx";
-
-                            using (StreamWriter writer = new StreamWriter(blueprintPath))
-                            {
-                                writer.WriteLine("1");
-                                writer.WriteLine(name);
-                                writer.WriteLine(line);
-                                writer.WriteLine(blueprintReader.getPartCount(line));
-                            }
-                        }
-                        x++;
-                    }
-                }
-            }
-        }
-
-        string manifestPath = activeFolder + "\\manifest.man";
-        if (File.Exists(manifestPath))
-        {
-            File.Delete(manifestPath);
-        }
-
-        using (StreamWriter writer = new StreamWriter(manifestPath))
-        {
-            for (int i = 0; i < manifest.Count; i++)
-            {
-                writer.WriteLine(manifest[i]);
-            }
-        }
 
         importPath = null;
         await LoadFolder(activeFolder);
@@ -420,95 +287,7 @@ public class blueprintManagerScript : MonoBehaviour
     }
     public async void importCreateOverwrite()
     {
-        string[] fileDescription = importPath.Split('.');
-        string fileExtension = fileDescription[fileDescription.Length - 1];
-        string[] filePath = importPath.Split('\\');
 
-        List<string> manifest = getManifest(activeFolder);
-
-        if (fileExtension == "bpx")
-        {
-            string name = "";
-            using (StreamReader sr = new StreamReader(importPath))
-            {
-                if (sr.ReadLine() == "1")
-                {
-                    name = sr.ReadLine();
-                }
-            }
-            string blueprintPath = activeFolder + "\\" + fixName(name);
-            if (!manifest.Contains("0" + name))
-            {
-                manifest.Add("0" + name);
-            }
-            File.Copy(importPath, blueprintPath, true);
-        }
-        if (fileExtension == "zip")
-        {
-            ZipFile.ExtractToDirectory(importPath, activeFolder, true);
-            List<string> newManifest = getManifest(activeFolder);
-            for(int i = 0; i < newManifest.Count; i++)
-            {
-                if (!manifest.Contains(newManifest[i]))
-                {
-                    manifest.Add(newManifest[i]);
-                }
-            }
-        }
-        if (fileExtension == "ssbp")
-        {
-            int x = 0;
-            if (File.Exists(importPath))
-            {
-                using (StreamReader sr = new StreamReader(importPath))
-                {
-                    string line;
-                    string name = "";
-                    while ((line = sr.ReadLine()) != null)
-                    {
-                        if (x % 3 == 0)
-                        {
-                            name = line;
-                        }
-                        if (x % 3 == 1)
-                        {
-                            string blueprintPath = activeFolder + "\\" + fixName(name) + ".bpx";
-                            if (File.Exists(blueprintPath))
-                            {
-                                File.Delete(blueprintPath);
-                            }
-                            if (!manifest.Contains("0" + name))
-                            {
-                                manifest.Add("0" + name);
-                            }
-
-                            using (StreamWriter writer = new StreamWriter(blueprintPath))
-                            {
-                                writer.WriteLine("1");
-                                writer.WriteLine(name);
-                                writer.WriteLine(line);
-                                writer.WriteLine(blueprintReader.getPartCount(line));
-                            }
-                        }
-                        x++;
-                    }
-                }
-            }
-        }
-
-        string manifestPath = activeFolder + "\\manifest.man";
-        if (File.Exists(manifestPath))
-        {
-            File.Delete(manifestPath);
-        }
-
-        using (StreamWriter writer = new StreamWriter(manifestPath))
-        {
-            for (int i = 0; i < manifest.Count; i++)
-            {
-                writer.WriteLine(manifest[i]);
-            }
-        }
 
         importPath = null;
         await LoadFolder(activeFolder);
@@ -517,116 +296,7 @@ public class blueprintManagerScript : MonoBehaviour
 
     public void loadOldVersions()
     {
-        List<string> manifest = getManifest(rootFolder);
 
-        int y = 0;
-        while ((PlayerPrefs.GetString("blueprintName" + y) != "") || (PlayerPrefs.GetString("blueprint" + y)) != "")
-        {
-            string blueprint = PlayerPrefs.GetString("blueprint" + y);
-            string blueprintName = PlayerPrefs.GetString("blueprintName" + y);
-            int partCount = blueprintReader.getPartCount(blueprint);
-
-            if (!Directory.Exists(rootFolder))
-            {
-                Directory.CreateDirectory(rootFolder);
-            }
-
-            string path = rootFolder + "\\" + fixName(blueprintName);
-            if (File.Exists(path + ".bpx") || manifest.Contains("0" + blueprintName))
-            {
-                int z = 2;
-                while (File.Exists(path + z + ".bpx") || manifest.Contains("0" + blueprintName + z))
-                {
-                    z++;
-                }
-                path = path + z;
-                blueprintName = blueprintName + z;
-            }
-            path = path + ".bpx";
-
-            using (StreamWriter writer = new StreamWriter(path))
-            {
-                writer.WriteLine("1");
-                writer.WriteLine(blueprintName);
-                writer.WriteLine(blueprint);
-                writer.WriteLine(partCount);
-                writer.WriteLine(rootFolder + "\\" + fixName(blueprintName) + ".png");
-            }
-            manifest.Add("0" + blueprintName);
-            PlayerPrefs.DeleteKey("blueprintName" + y);
-            PlayerPrefs.DeleteKey("blueprint" + y);
-            y++;
-        }
-
-
-        int x = 0;
-        string importPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Scarlet Skies Blueprint Manager\Blueprints.bbsp";
-        if (File.Exists(importPath))
-        {
-            using (StreamReader sr = new StreamReader(importPath))
-            {
-                string line;
-                string name = "";
-                while ((line = sr.ReadLine()) != null)
-                {
-                    if (x % 3 == 0)
-                    {
-                        name = line;
-                    }
-                    if (x % 3 == 1)
-                    {
-                        if (!Directory.Exists(rootFolder))
-                        {
-                            Directory.CreateDirectory(rootFolder);
-                        }
-
-                        string blueprintPath = rootFolder + "\\" + fixName(name);
-                        if (File.Exists(blueprintPath + ".bpx") || manifest.Contains("0" + name))
-                        {
-                            int z = 2;
-                            while (File.Exists(blueprintPath + z + ".bpx") || manifest.Contains("0" + name + z))
-                            {
-                                z++;
-                            }
-                            blueprintPath = blueprintPath + z;
-                            name = name + z;
-                        }
-                        blueprintPath = blueprintPath + ".bpx";
-
-                        using (StreamWriter writer = new StreamWriter(blueprintPath))
-                        {
-                            writer.WriteLine("1");
-                            writer.WriteLine(name);
-                            writer.WriteLine(line);
-                            writer.WriteLine(blueprintReader.getPartCount(line));
-                            writer.WriteLine(rootFolder + "\\" + fixName(name) + ".png");
-                        }
-                        manifest.Add("0" + name);
-                    }
-                    x++;
-                }
-            }
-            File.Delete(importPath);
-        }
-
-        if (!Directory.Exists(rootFolder))
-        {
-            Directory.CreateDirectory(rootFolder);
-        }
-
-        string manifestPath = rootFolder + "\\manifest.man";
-        if (File.Exists(manifestPath))
-        {
-            File.Delete(manifestPath);
-        }
-
-        using (StreamWriter writer = new StreamWriter(manifestPath))
-        {
-            for (int i = 0; i < manifest.Count; i++)
-            {
-                writer.WriteLine(manifest[i]);
-            }
-        }
     }
 
     public string fixName(string name)
@@ -645,49 +315,44 @@ public class blueprintManagerScript : MonoBehaviour
         return name;
     }
 
-    public List<string> getManifest(string folder)
+    public List<manifestItem> getManifest(string folder)
     {
-        List<string> manifest = new List<string>();
-        string manifestReference = folder + "\\" + "manifest.man";
+        List<manifestItem> manifest = new List<manifestItem>();
+        string manifestReference = folder + "\\" + "manifest2.man";
         if (File.Exists(manifestReference))
         {
             using (StreamReader reader = new StreamReader(manifestReference))
             {
                 string line;
-                manifest.Add(line = reader.ReadLine());
-                while ((line = reader.ReadLine()) != null)
+                line = reader.ReadLine();
+                if (line == "1")
                 {
-                    manifest.Add(line);
+                    int i = 0;
+                    manifestItem tempItem = new manifestItem();
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        if (i % 2 == 0)
+                        {
+                            int type = 0;
+                            int.TryParse(line, out type);
+                            tempItem.type = type;
+                        }
+                        if (i % 2 == 1)
+                        {
+                            tempItem.reference = line;
+                            manifest.Add(tempItem);
+                        }
+                        i++;
+                    }
                 }
             }
         }
         return manifest;
     }
 
-    public void updateManifest(string path)
+    public void updateManifast(string path)
     {
-        string manifestPath = path + "\\manifest.man";
-        using (StreamWriter writer = new StreamWriter(manifestPath))
-        {
-            for (int i = 0; i < content.childCount; i++)
-            {
-                if ((i != 0 && activeFolder != rootFolder) || activeFolder == rootFolder)
-                {
-                    if (content.GetChild(i).GetComponent<blueprintScript>() != null)
-                    {
-                        string name = content.GetChild(i).GetComponent<blueprintScript>().blueprintName;
-                        content.GetChild(i).GetComponent<blueprintScript>().isMovingThisElement = false;
-                        writer.WriteLine("0" + name);
-                    }
-                    if (content.GetChild(i).GetComponent<folderScript>() != null)
-                    {
-                        string name = content.GetChild(i).GetComponent<folderScript>().folderName;
-                        content.GetChild(i).GetComponent<folderScript>().isMovingThisElement = false;
-                        writer.WriteLine("1" + name);
-                    }
-                }
-            }
-        }
+        //update manifest
     }
 
     public void preMove(GameObject uiElement, string label, int index)
@@ -743,7 +408,7 @@ public class blueprintManagerScript : MonoBehaviour
             {
                 itemBeingMoved.transform.SetSiblingIndex(movePosition);
             }
-            updateManifest(activeFolder);
+            updateManifast(activeFolder);
             moveLabel.gameObject.SetActive(false);
             dontMove = false;
         }
@@ -836,4 +501,23 @@ public class blueprintManagerScript : MonoBehaviour
     {
         overWritePopup.SetActive(false);
     }
+}
+
+[System.Serializable]
+public class manifestItem
+{
+    public int type;
+    public string reference;
+}
+
+public class previousBlueprint
+{
+    public string saveDate;
+    public string blueprint;
+}
+
+public class blueprintInfo
+{
+    public string name;
+    public string blueprint;
 }
