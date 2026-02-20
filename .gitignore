@@ -98,3 +98,6 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# New useless file created by visual studio 2026 like seriously what the fuck is this its 3 lines and just says "heres where the old project is" like ?????
+*.slnx

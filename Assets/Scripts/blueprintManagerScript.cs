@@ -7,6 +7,7 @@ using System.IO.Compression;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using System.Linq;
 
 public class blueprintManagerScript : MonoBehaviour
 {
@@ -91,6 +92,7 @@ public class blueprintManagerScript : MonoBehaviour
                     Destroy(content.transform.GetChild(i).gameObject);
                 }
                 activeFolder = path;
+                newManifest();
 
 
                 //add return if needed
@@ -114,7 +116,7 @@ public class blueprintManagerScript : MonoBehaviour
                 }
 
                 //get manifest
-                List<manifestItem> manifest = getManifest(rootFolder);
+                List<manifestItem> manifest = getManifest(activeFolder);
 
                 if (manifest != null)
                 {
@@ -130,7 +132,7 @@ public class blueprintManagerScript : MonoBehaviour
                             using (StreamReader reader = new StreamReader(item.reference))
                             {
                                 string type = reader.ReadLine();
-                                if (type == "2")
+                                if (type == "1")
                                 {
                                     blueprintScript.blueprintName = reader.ReadLine();
                                     blueprintScript.blueprint = reader.ReadLine();
@@ -196,7 +198,7 @@ public class blueprintManagerScript : MonoBehaviour
                             folderScript folderScript = duplicatedFolder.GetComponent<folderScript>();
 
                             //set static and external variables
-                            folderScript.folderName = Path.GetDirectoryName(item.reference);
+                            folderScript.folderName = Path.GetFileName(item.reference);
                             folderScript.folderNameText.text = folderScript.folderName;
                             folderScript.folderReference = item.reference;
                             folderScript.folderFolder = path;
@@ -294,9 +296,91 @@ public class blueprintManagerScript : MonoBehaviour
         overWritePopup.SetActive(false);
     }
 
-    public void loadOldVersions()
+    public void newManifest()
     {
+        string manifestReference = activeFolder + "\\manifest.man";
+        if (File.Exists(manifestReference))
+        {
+            List<manifestItem> oldBlueprints = new List<manifestItem>();
+            List<string> blueprints = Directory.GetFiles(activeFolder, "*.bpx").ToList();
+            List<string> folders = Directory.GetDirectories(activeFolder).ToList();
+            using(StreamReader reader = new StreamReader(manifestReference))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (line.Substring(0, 1) == "0")
+                    {
+                        string blueprintReference = activeFolder + "\\" + fixName(line.Substring(1)) + ".bpx";
+                        if (File.Exists(blueprintReference))
+                        {
+                            manifestItem tempBlueprint = new manifestItem();
+                            tempBlueprint.type = 0;
+                            tempBlueprint.reference = blueprintReference;
+                            oldBlueprints.Add(tempBlueprint);
 
+                            if (blueprints.Contains(blueprintReference))
+                            {
+                                blueprints.Remove(blueprintReference);
+                            }
+                        }
+                    }
+
+                    if (line.Substring(0, 1) == "1")
+                    {
+                        string folderReference = activeFolder + "\\" + line.Substring(1);
+                        if (Directory.Exists(folderReference))
+                        {
+                            manifestItem tempFolder = new manifestItem();
+                            tempFolder.type = 1;
+                            tempFolder.reference = folderReference;
+                            oldBlueprints.Add(tempFolder);
+
+                            if (folders.Contains(folderReference))
+                            {
+                                folders.Remove(folderReference);
+                            }
+                        }
+                    }
+                }
+            }
+
+            //add any blueprints or folders that are in the directory but not in the manifest
+            for (int i = 0; i < blueprints.Count; i++)
+            {
+                manifestItem tempBlueprint = new manifestItem();
+                tempBlueprint.type = 0;
+                tempBlueprint.reference = blueprints[i];
+                oldBlueprints.Add(tempBlueprint);
+            }
+
+            for (int i = 0; i < folders.Count; i++)
+            {
+                manifestItem tempFolder = new manifestItem();
+                tempFolder.type = 1;
+                tempFolder.reference = folders[i];
+                oldBlueprints.Add(tempFolder);
+            }
+
+            addItemsToManifest(oldBlueprints);
+            File.Delete(manifestReference);
+        }
+    }
+
+    public void addItemsToManifest(List<manifestItem> items)
+    {
+        List<manifestItem> manifest = getManifest(activeFolder);
+        manifest.AddRange(items);
+
+        using (StreamWriter writer = new StreamWriter(activeFolder + "\\manifest2.man"))
+        {
+            writer.WriteLine("1");
+            foreach (manifestItem item in manifest)
+            {
+                writer.WriteLine(item.type.ToString());
+                writer.WriteLine(item.reference);
+            }
+        }
     }
 
     public string fixName(string name)
@@ -333,6 +417,7 @@ public class blueprintManagerScript : MonoBehaviour
                     {
                         if (i % 2 == 0)
                         {
+                            tempItem = new manifestItem();
                             int type = 0;
                             int.TryParse(line, out type);
                             tempItem.type = type;
@@ -340,6 +425,8 @@ public class blueprintManagerScript : MonoBehaviour
                         if (i % 2 == 1)
                         {
                             tempItem.reference = line;
+                            //Debug.Log(tempItem.type);
+                            //Debug.Log(tempItem.reference);
                             manifest.Add(tempItem);
                         }
                         i++;
@@ -347,6 +434,13 @@ public class blueprintManagerScript : MonoBehaviour
                 }
             }
         }
+
+        //for (int i = 0; i < manifest.Count; i++)
+        //{
+        //    Debug.Log(manifest[i].type);
+        //    Debug.Log(manifest[i].reference);
+        //}
+
         return manifest;
     }
 
@@ -513,11 +607,5 @@ public class manifestItem
 public class previousBlueprint
 {
     public string saveDate;
-    public string blueprint;
-}
-
-public class blueprintInfo
-{
-    public string name;
     public string blueprint;
 }
